@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Uday Sharma — Full-Stack & Mobile Developer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #080a0e;
+    --surface: #0e1117;
+    --surface2: #141820;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --accent: #7ee8c0;
+    --accent2: #4f9cf9;
+    --accent3: #f97b4f;
+    --gold: #e8c97e;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    position: fixed; width: 10px; height: 10px;
+    background: var(--accent); border-radius: 50%;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform 0.1s ease, opacity 0.2s;
+    mix-blend-mode: exclusion;
+  }
+  .cursor-ring {
+    position: fixed; width: 36px; height: 36px;
+    border: 1px solid rgba(126,232,192,0.4); border-radius: 50%;
+    pointer-events: none; z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: transform 0.18s ease, width 0.2s, height 0.2s;
+  }
+
+  /* CANVAS */
+  #bg-canvas {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 48px;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(0px);
+  }
+  nav.scrolled {
+    border-color: var(--border);
+    backdrop-filter: blur(20px);
+    background: rgba(8,10,14,0.8);
+  }
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 18px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 36px; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none;
+    font-size: 12px; letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+
+  /* SECTIONS */
+  section { position: relative; z-index: 1; }
+
+  /* HERO */
+  #hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 48px 80px;
+  }
+  .hero-eyebrow {
+    font-size: 11px; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero-eyebrow::before {
+    content: ''; display: block; width: 32px; height: 1px;
+    background: var(--accent);
+  }
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(56px, 9vw, 128px);
+    font-weight: 800; line-height: 0.9;
+    letter-spacing: -3px;
+    margin-bottom: 32px;
+  }
+  .hero-title .line2 {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.4);
+  }
+  .hero-bottom {
+    display: flex; align-items: flex-end;
+    justify-content: space-between; gap: 48px;
+  }
+  .hero-desc {
+    max-width: 360px; line-height: 1.8;
+    color: var(--muted); font-size: 13px;
+  }
+  .hero-stats {
+    display: flex; gap: 48px;
+  }
+  .stat-item { text-align: right; }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 40px; font-weight: 800;
+    color: var(--text); line-height: 1;
+  }
+  .stat-num span { color: var(--accent); font-size: 24px; }
+  .stat-label { color: var(--muted); font-size: 11px; letter-spacing: 1px; margin-top: 4px; }
+  .scroll-hint {
+    position: absolute; bottom: 32px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    color: var(--muted); font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; animation: bounce 2s infinite;
+  }
+  .scroll-hint::after {
+    content: ''; display: block; width: 1px; height: 40px;
+    background: linear-gradient(to bottom, var(--muted), transparent);
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(8px); }
+  }
+
+  /* ABOUT */
+  #about {
+    padding: 120px 48px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+    align-items: center;
+    border-top: 1px solid var(--border);
+  }
+  .section-label {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::before { content: '//'; color: var(--muted); }
+  .about-heading {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 700; line-height: 1.1;
+    letter-spacing: -1px; margin-bottom: 24px;
+  }
+  .about-text { color: var(--muted); line-height: 1.9; font-size: 13px; }
+  .about-text p + p { margin-top: 16px; }
+  .skills-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+  }
+  .skill-block {
+    background: var(--surface); padding: 20px;
+    border: 1px solid var(--border);
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .skill-block:hover {
+    background: var(--surface2);
+    border-color: rgba(126,232,192,0.2);
+  }
+  .skill-block-label {
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  .skill-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .skill-tag {
+    font-size: 11px; color: var(--muted);
+    background: rgba(255,255,255,0.04);
+    padding: 3px 10px; border-radius: 2px;
+  }
+
+  /* PROJECTS */
+  #projects { padding: 120px 48px; border-top: 1px solid var(--border); }
+  .projects-header {
+    display: flex; align-items: flex-end;
+    justify-content: space-between; margin-bottom: 64px;
+  }
+  .projects-heading {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 64px);
+    font-weight: 800; line-height: 1;
+    letter-spacing: -2px;
+  }
+  .projects-subtext { color: var(--muted); font-size: 12px; max-width: 240px; text-align: right; line-height: 1.7; }
+
+  /* FEATURED PROJECT */
+  .featured-project {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0; border: 1px solid var(--border);
+    margin-bottom: 3px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .featured-project:hover { border-color: rgba(126,232,192,0.25); }
+  .fp-visual {
+    background: var(--surface);
+    min-height: 380px;
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fp-visual-inner {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 80px; font-weight: 800;
+    opacity: 0.08; letter-spacing: -4px;
+    color: var(--text); user-select: none;
+    position: absolute;
+  }
+  .fp-badge {
+    position: absolute; top: 20px; left: 20px;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 2px;
+  }
+  .badge-mobile { background: rgba(79,156,249,0.15); color: var(--accent2); border: 1px solid rgba(79,156,249,0.2); }
+  .badge-web { background: rgba(126,232,192,0.1); color: var(--accent); border: 1px solid rgba(126,232,192,0.15); }
+  .badge-erp { background: rgba(249,123,79,0.1); color: var(--accent3); border: 1px solid rgba(249,123,79,0.15); }
+  .fp-content {
+    padding: 40px;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+  .fp-top {}
+  .fp-tech {
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 16px;
+  }
+  .fp-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px; font-weight: 700;
+    line-height: 1.2; letter-spacing: -0.5px;
+    margin-bottom: 16px;
+  }
+  .fp-desc { color: var(--muted); line-height: 1.8; font-size: 12px; margin-bottom: 24px; }
+  .fp-highlights { margin-bottom: 28px; }
+  .fp-highlight {
+    display: flex; align-items: flex-start;
+    gap: 10px; font-size: 12px; color: var(--muted);
+    margin-bottom: 8px; line-height: 1.6;
+  }
+  .fp-highlight::before { content: '→'; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+  .fp-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    text-decoration: none; border-radius: 2px;
+    transition: all 0.2s; cursor: pointer; border: none;
+  }
+  .btn-play {
+    background: rgba(79,156,249,0.1); color: var(--accent2);
+    border: 1px solid rgba(79,156,249,0.25);
+  }
+  .btn-play:hover { background: rgba(79,156,249,0.2); }
+  .btn-apple {
+    background: rgba(255,255,255,0.05); color: var(--text);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .btn-apple:hover { background: rgba(255,255,255,0.1); }
+  .btn-web {
+    background: rgba(126,232,192,0.08); color: var(--accent);
+    border: 1px solid rgba(126,232,192,0.2);
+  }
+  .btn-web:hover { background: rgba(126,232,192,0.15); }
+  .btn-ghost {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+  .btn svg { width: 14px; height: 14px; }
+
+  /* PROJECTS GRID */
+  .projects-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 3px; margin-top: 3px;
+  }
+  .project-card {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 28px; position: relative; overflow: hidden;
+    transition: all 0.3s; cursor: default;
+  }
+  .project-card:hover {
+    background: var(--surface2);
+    border-color: rgba(126,232,192,0.2);
+    transform: translateY(-2px);
+  }
+  .project-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .project-card:hover::before { opacity: 1; }
+  .pc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .pc-icon { font-size: 28px; }
+  .pc-badge { font-size: 10px; letter-spacing: 1px; padding: 3px 8px; border-radius: 2px; }
+  .pc-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px; font-weight: 700;
+    margin-bottom: 8px; letter-spacing: -0.3px;
+  }
+  .pc-desc { color: var(--muted); font-size: 11px; line-height: 1.7; margin-bottom: 16px; }
+  .pc-tech { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
+  .pc-tech-tag {
+    font-size: 10px; color: var(--muted);
+    background: rgba(255,255,255,0.04);
+    padding: 2px 8px; border-radius: 2px;
+    letter-spacing: 0.5px;
+  }
+  .pc-links { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* EXPERIENCE */
+  #experience { padding: 120px 48px; border-top: 1px solid var(--border); }
+  .exp-grid { display: grid; grid-template-columns: 280px 1fr; gap: 80px; margin-top: 64px; }
+  .exp-nav { position: relative; }
+  .exp-item {
+    padding: 20px 0; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .exp-item:hover .exp-company, .exp-item.active .exp-company { color: var(--accent); }
+  .exp-company { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .exp-period { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .exp-indicator {
+    position: absolute; right: -1px; top: 0;
+    width: 2px; height: 0;
+    background: var(--accent); transition: height 0.3s;
+  }
+  .exp-detail { padding: 8px 0; }
+  .exp-role { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .exp-company-full { color: var(--accent); font-size: 12px; letter-spacing: 1px; margin-bottom: 32px; }
+  .exp-bullets { list-style: none; }
+  .exp-bullets li {
+    display: flex; align-items: flex-start; gap: 12px;
+    color: var(--muted); font-size: 12px; line-height: 1.8;
+    margin-bottom: 12px; padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .exp-bullets li::before { content: '//'; color: var(--accent); flex-shrink: 0; font-weight: 500; }
+
+  /* FOOTER */
+  footer {
+    padding: 80px 48px 48px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: flex-end; justify-content: space-between;
+  }
+  .footer-big {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(40px, 8vw, 100px);
+    font-weight: 800; line-height: 1; letter-spacing: -3px;
+    color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.15);
+  }
+  .footer-right { text-align: right; }
+  .footer-contact-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .footer-email {
+    font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700;
+    color: var(--text); text-decoration: none; display: block; margin-bottom: 8px;
+    transition: color 0.2s;
+  }
+  .footer-email:hover { color: var(--accent); }
+  .footer-phone { color: var(--muted); font-size: 12px; margin-bottom: 24px; }
+  .footer-links { display: flex; gap: 20px; justify-content: flex-end; }
+  .footer-link {
+    color: var(--muted); text-decoration: none; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    transition: color 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .footer-link:hover { color: var(--accent); }
+
+  /* REVEAL ANIMATION */
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: rgba(126,232,192,0.3); border-radius: 2px; }
+
+  @media (max-width: 900px) {
+    nav { padding: 20px 24px; }
+    #hero { padding: 0 24px 60px; }
+    .hero-bottom { flex-direction: column; align-items: flex-start; }
+    #about, .exp-grid { grid-template-columns: 1fr; }
+    #about { padding: 80px 24px; }
+    #projects, #experience { padding: 80px 24px; }
+    .projects-grid { grid-template-columns: 1fr 1fr; }
+    .featured-project { grid-template-columns: 1fr; }
+    footer { padding: 60px 24px 40px; flex-direction: column; gap: 40px; }
+    .footer-right { text-align: left; }
+    .footer-links { justify-content: flex-start; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 600px) {
+    .projects-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<canvas id="bg-canvas"></canvas>
+
+<nav id="navbar">
+  <a class="nav-logo" href="#">US<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="mailto:us884037@gmail.com">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-eyebrow reveal">Available for opportunities</div>
+  <h1 class="hero-title reveal">
+    <div>Uday</div>
+    <div class="line2">Sharma</div>
+  </h1>
+  <div class="hero-bottom reveal">
+    <p class="hero-desc">Full-Stack & Mobile Developer building production-grade apps across Android, iOS, and web — 20+ deployed apps, 1000+ active users.</p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">20<span>+</span></div>
+        <div class="stat-label">Apps Deployed</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">1K<span>+</span></div>
+        <div class="stat-label">Active Users</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">2<span>+</span></div>
+        <div class="stat-label">Yrs Experience</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">Scroll</div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="reveal">
+    <div class="section-label">About</div>
+    <h2 class="about-heading">Building things that actually ship.</h2>
+    <div class="about-text">
+      <p>I'm a Full-Stack & Mobile developer from Bhilai, Chhattisgarh, currently pursuing B.Tech in CSE at RSR-Rungta College. I specialize in React Native, Node.js, and PHP — with a strong focus on end-to-end product ownership.</p>
+      <p>As the sole mobile developer at RISPL, I own the full app lifecycle — from architecture to Play Store / App Store releases. I've independently shipped 20+ production apps for clients and companies across India.</p>
+      <p>I care about clean architecture, scalable systems, and code that doesn't break in production.</p>
+    </div>
+  </div>
+  <div class="skills-grid reveal">
+    <div class="skill-block">
+      <div class="skill-block-label">Mobile</div>
+      <div class="skill-tags">
+        <span class="skill-tag">React Native</span>
+        <span class="skill-tag">Expo</span>
+        <span class="skill-tag">Firebase</span>
+        <span class="skill-tag">Play Store</span>
+        <span class="skill-tag">App Store</span>
+        <span class="skill-tag">CI/CD</span>
+      </div>
+    </div>
+    <div class="skill-block">
+      <div class="skill-block-label">Backend</div>
+      <div class="skill-tags">
+        <span class="skill-tag">Node.js</span>
+        <span class="skill-tag">Express</span>
+        <span class="skill-tag">PHP</span>
+        <span class="skill-tag">CodeIgniter 4</span>
+        <span class="skill-tag">REST APIs</span>
+      </div>
+    </div>
+    <div class="skill-block">
+      <div class="skill-block-label">Databases</div>
+      <div class="skill-tags">
+        <span class="skill-tag">MySQL</span>
+        <span class="skill-tag">MongoDB</span>
+        <span class="skill-tag">Oracle</span>
+      </div>
+    </div>
+    <div class="skill-block">
+      <div class="skill-block-label">DevOps & Web</div>
+      <div class="skill-tags">
+        <span class="skill-tag">Git / GitHub</span>
+        <span class="skill-tag">GitLab</span>
+        <span class="skill-tag">HTML/CSS</span>
+        <span class="skill-tag">Bootstrap</span>
+        <span class="skill-tag">Java</span>
+        <span class="skill-tag">Python</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="projects-header reveal">
+    <div>
+      <div class="section-label">Work</div>
+      <h2 class="projects-heading">Selected<br>Projects</h2>
+    </div>
+    <p class="projects-subtext">20+ production apps across Android & iOS. Here's a snapshot.</p>
+  </div>
+
+  <!-- Featured: Mobile Ecosystem -->
+  <div class="featured-project reveal">
+    <div class="fp-visual">
+      <div class="fp-visual-inner">APP</div>
+      <div class="fp-badge badge-mobile">Featured · Mobile</div>
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 60%, rgba(79,156,249,0.12), transparent 70%)"></div>
+      <div style="font-size:80px;z-index:1;filter:drop-shadow(0 0 40px rgba(79,156,249,0.3))">📱</div>
+    </div>
+    <div class="fp-content">
+      <div class="fp-top">
+        <div class="fp-tech">React Native · Node.js · MySQL · Firebase</div>
+        <h3 class="fp-title">Enterprise Mobile Applications Ecosystem</h3>
+        <p class="fp-desc">3 large-scale production mobile apps for Android & iOS at RISPL — serving 1,000+ active users with full CI/CD, crash reporting, and real-time analytics.</p>
+        <div class="fp-highlights">
+          <div class="fp-highlight">Sole mobile developer — owned entire app lifecycle from design to store release</div>
+          <div class="fp-highlight">RESTful API backend with Node.js, Express & MySQL powering all 3 apps</div>
+          <div class="fp-highlight">Firebase crash analytics & Expo services for production monitoring</div>
+          <div class="fp-highlight">Automated CI/CD pipelines for both Android & iOS deployments</div>
+        </div>
+      </div>
+      <div class="fp-links">
+        <a href="#" class="btn btn-play">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5v-17l17.5 8.5L3 20.5z"/></svg>
+          Play Store
+        </a>
+        <a href="#" class="btn btn-apple">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          App Store
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured: ERP -->
+  <div class="featured-project reveal" style="flex-direction:row-reverse">
+    <div class="fp-visual" style="order:2">
+      <div class="fp-visual-inner">ERP</div>
+      <div class="fp-badge badge-erp">Enterprise</div>
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 70% 40%, rgba(249,123,79,0.1), transparent 70%)"></div>
+      <div style="font-size:80px;z-index:1;filter:drop-shadow(0 0 40px rgba(249,123,79,0.25))">⚙️</div>
+    </div>
+    <div class="fp-content" style="order:1">
+      <div class="fp-top">
+        <div class="fp-tech" style="color:var(--accent3)">PHP · CodeIgniter · MySQL</div>
+        <h3 class="fp-title">ERP & Business Logic System</h3>
+        <p class="fp-desc">Full-scale ERP system with complex BV matching algorithms, hierarchical data processing, automated bonus computation, and admin reporting dashboards.</p>
+        <div class="fp-highlights">
+          <div class="fp-highlight">Recursive BV/bonus matching algorithm across multi-level hierarchical data</div>
+          <div class="fp-highlight">Modular MVC architecture with CodeIgniter 4 for maintainability at scale</div>
+          <div class="fp-highlight">Optimized database queries handling large transactional datasets</div>
+          <div class="fp-highlight">Admin dashboard for business automation and real-time reporting</div>
+        </div>
+      </div>
+      <div class="fp-links">
+        <a href="#" class="btn btn-web">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Live Demo
+        </a>
+        <a href="https://github.com/DeadPool-ops" class="btn btn-ghost">GitHub</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Projects Grid -->
+  <div class="projects-grid">
+
+    <!-- Ecommerce -->
+    <div class="project-card reveal">
+      <div class="pc-header">
+        <span class="pc-icon">🛒</span>
+        <span class="pc-badge badge-web">Web</span>
+      </div>
+      <div class="pc-title">Ecommerce Platform</div>
+      <p class="pc-desc">Full ecommerce platform with product catalogue, shopping cart, order management, payment gateway integration, and responsive admin dashboard.</p>
+      <div class="pc-tech">
+        <span class="pc-tech-tag">CodeIgniter 4</span>
+        <span class="pc-tech-tag">MySQL</span>
+        <span class="pc-tech-tag">Bootstrap</span>
+      </div>
+      <div class="pc-links">
+        <a href="#" class="btn btn-web" style="font-size:10px;padding:7px 14px">Visit Site</a>
+        <a href="https://github.com/DeadPool-ops" class="btn btn-ghost" style="font-size:10px;padding:7px 14px">GitHub</a>
+      </div>
+    </div>
+
+    <!-- Freelance Android App 1 -->
+    <div class="project-card reveal">
+      <div class="pc-header">
+        <span class="pc-icon">📦</span>
+        <span class="pc-badge badge-mobile">Android</span>
+      </div>
+      <div class="pc-title">Delivery Tracker App</div>
+      <p class="pc-desc">Client logistics app for real-time delivery tracking, order status updates, and driver management. 1,000+ downloads on Play Store.</p>
+      <div class="pc-tech">
+        <span class="pc-tech-tag">React Native</span>
+        <span class="pc-tech-tag">Node.js</span>
+        <span class="pc-tech-tag">Firebase</span>
+      </div>
+      <div class="pc-links">
+        <a href="#" class="btn btn-play" style="font-size:10px;padding:7px 14px">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><path d="M3 20.5v-17l17.5 8.5L3 20.5z"/></svg>
+          Play Store
+        </a>
+      </div>
+    </div>
+
+    <!-- Freelance iOS App -->
+    <div class="project-card reveal">
+      <div class="pc-header">
+        <span class="pc-icon">🍎</span>
+        <span class="pc-badge" style="background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--border)">iOS</span>
+      </div>
+      <div class="pc-title">Business Management App</div>
+      <p class="pc-desc">Cross-platform iOS & Android business management application with admin panel, user roles, and PHP backend.</p>
+      <div class="pc-tech">
+        <span class="pc-tech-tag">React Native</span>
+        <span class="pc-tech-tag">PHP</span>
+        <span class="pc-tech-tag">MySQL</span>
+      </div>
+      <div class="pc-links">
+        <a href="#" class="btn btn-play" style="font-size:10px;padding:7px 14px">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><path d="M3 20.5v-17l17.5 8.5L3 20.5z"/></svg>
+          Play Store
+        </a>
+        <a href="#" class="btn btn-apple" style="font-size:10px;padding:7px 14px">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          App Store
+        </a>
+      </div>
+    </div>
+
+    <!-- Payment Gateway Integration -->
+    <div class="project-card reveal">
+      <div class="pc-header">
+        <span class="pc-icon">💳</span>
+        <span class="pc-badge badge-web">FinTech</span>
+      </div>
+      <div class="pc-title">Payment Gateway Integration</div>
+      <p class="pc-desc">Secure multi-gateway payment system with transaction handling, validation, error recovery, and admin audit logs.</p>
+      <div class="pc-tech">
+        <span class="pc-tech-tag">CodeIgniter 4</span>
+        <span class="pc-tech-tag">MySQL</span>
+        <span class="pc-tech-tag">REST APIs</span>
+      </div>
+      <div class="pc-links">
+        <a href="#" class="btn btn-web" style="font-size:10px;padding:7px 14px">Live</a>
+        <a href="https://github.com/DeadPool-ops" class="btn btn-ghost" style="font-size:10px;padding:7px 14px">GitHub</a>
+      </div>
+    </div>
+
+    <!-- Freelance Android Apps -->
+    <div class="project-card reveal">
+      <div class="pc-header">
+        <span class="pc-icon">📲</span>
+        <span class="pc-badge badge-mobile">Android · 10+</span>
+      </div>
+      <div class="pc-title">Freelance Android Portfolio</div>
+      <p class="pc-desc">10+ independently developed and deployed Android apps for various clients — spanning retail, logistics, and services. All managed via Play Developer Console.</p>
+      <div class="pc-tech">
+        <span class="pc-tech-tag">React Native</span>
+        <span class="pc-tech-tag">Expo</span>
+        <span class="pc-tech-tag">PHP Backend</span>
+      </div>
+      <div class="pc-links">
+        <a href="https://github.com/DeadPool-ops" class="btn btn-ghost" style="font-size:10px;padding:7px 14px">GitHub</a>
+      </div>
+    </div>
+
+    <!-- Push Notification / Analytics System -->
+    <div class="project-card reveal">
+      <div class="pc-header">
+        <span class="pc-icon">🔥</span>
+        <span class="pc-badge badge-mobile">Firebase</span>
+      </div>
+      <div class="pc-title">App Analytics & Monitoring</div>
+      <p class="pc-desc">Firebase-powered crash reporting, push notification system, and user behavior analytics infrastructure for production mobile apps.</p>
+      <div class="pc-tech">
+        <span class="pc-tech-tag">Firebase</span>
+        <span class="pc-tech-tag">Expo Services</span>
+        <span class="pc-tech-tag">React Native</span>
+      </div>
+      <div class="pc-links">
+        <a href="https://github.com/DeadPool-ops" class="btn btn-ghost" style="font-size:10px;padding:7px 14px">GitHub</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="section-label reveal">Experience</div>
+  <h2 class="projects-heading reveal" style="margin-bottom:0">Where I've<br>Worked</h2>
+  <div class="exp-grid">
+    <div class="exp-nav reveal">
+      <div class="exp-item active" onclick="switchExp(0, this)">
+        <div class="exp-company">RISPL</div>
+        <div class="exp-period">May 2025 – Present</div>
+      </div>
+      <div class="exp-item" onclick="switchExp(1, this)">
+        <div class="exp-company">LogixHunt</div>
+        <div class="exp-period">Apr 2024 – May 2025</div>
+      </div>
+    </div>
+    <div class="exp-detail reveal" id="exp-detail">
+      <div id="exp-0">
+        <div class="exp-role">Full Stack App Developer</div>
+        <div class="exp-company-full">RISPL · Kohka, Kurud Road, Chhattisgarh</div>
+        <ul class="exp-bullets">
+          <li>Building and maintaining scalable cross-platform mobile apps using React Native in a live production environment</li>
+          <li>Sole mobile developer — responsible for full app lifecycle from architecture to Play Store & App Store releases</li>
+          <li>Designed backend services with Node.js, Express, and MySQL with clean REST API architecture</li>
+          <li>Implemented CI/CD pipelines and managed production deployments for 3 apps serving 1,000+ users</li>
+          <li>Integrated Firebase & Expo analytics for crash monitoring, push notifications, and performance optimization</li>
+        </ul>
+      </div>
+      <div id="exp-1" style="display:none">
+        <div class="exp-role">Full Stack Web Developer</div>
+        <div class="exp-company-full">LogixHunt · Smriti Nagar, Chhattisgarh</div>
+        <ul class="exp-bullets">
+          <li>Engineered and maintained full-stack business applications using CodeIgniter 4 with modular MVC architecture</li>
+          <li>Integrated secure payment gateways and multiple third-party APIs with proper validation and error handling</li>
+          <li>Designed complex business logic systems including structured BV/bonus matching algorithms with recursive processing</li>
+          <li>Optimized database interactions for performance and scalability under high transactional load</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-big">Let's Build.</div>
+  <div class="footer-right">
+    <div class="footer-contact-label">Get in touch</div>
+    <a href="mailto:us884037@gmail.com" class="footer-email">us884037@gmail.com</a>
+    <div class="footer-phone">+91 84359 47930</div>
+    <div class="footer-links">
+      <a href="https://www.linkedin.com/in/uday-sh" target="_blank" class="footer-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+        LinkedIn
+      </a>
+      <a href="https://github.com/DeadPool-ops" target="_blank" class="footer-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ─── THREE.JS BACKGROUND ───────────────────────────────────────────
+const canvas = document.getElementById('bg-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000, 0);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 5;
+
+// Floating particle field
+const particleCount = 2000;
+const geo = new THREE.BufferGeometry();
+const positions = new Float32Array(particleCount * 3);
+const colors = new Float32Array(particleCount * 3);
+const sizes = new Float32Array(particleCount);
+
+const palette = [
+  new THREE.Color(0x7ee8c0),
+  new THREE.Color(0x4f9cf9),
+  new THREE.Color(0xf97b4f),
+  new THREE.Color(0xe8c97e),
+];
+
+for (let i = 0; i < particleCount; i++) {
+  positions[i * 3] = (Math.random() - 0.5) * 20;
+  positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+  const c = palette[Math.floor(Math.random() * palette.length)];
+  colors[i * 3] = c.r;
+  colors[i * 3 + 1] = c.g;
+  colors[i * 3 + 2] = c.b;
+  sizes[i] = Math.random() * 2 + 0.5;
+}
+
+geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+const mat = new THREE.PointsMaterial({
+  size: 0.04, vertexColors: true,
+  transparent: true, opacity: 0.5,
+  sizeAttenuation: true,
+});
+
+const particles = new THREE.Points(geo, mat);
+scene.add(particles);
+
+// Grid lines
+const gridHelper = new THREE.GridHelper(30, 30, 0x1a2030, 0x1a2030);
+gridHelper.position.y = -4;
+gridHelper.material.opacity = 0.4;
+gridHelper.material.transparent = true;
+scene.add(gridHelper);
+
+// Wire sphere
+const sphereGeo = new THREE.SphereGeometry(1.5, 16, 16);
+const sphereMat = new THREE.MeshBasicMaterial({
+  color: 0x7ee8c0, wireframe: true,
+  transparent: true, opacity: 0.04
+});
+const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+sphere.position.set(3, 0, -2);
+scene.add(sphere);
+
+// Second sphere
+const sphere2 = new THREE.Mesh(
+  new THREE.SphereGeometry(0.8, 12, 12),
+  new THREE.MeshBasicMaterial({ color: 0x4f9cf9, wireframe: true, transparent: true, opacity: 0.06 })
+);
+sphere2.position.set(-3, 1, -1);
+scene.add(sphere2);
+
+let mouseX = 0, mouseY = 0;
+window.addEventListener('mousemove', e => {
+  mouseX = (e.clientX / window.innerWidth - 0.5) * 0.5;
+  mouseY = (e.clientY / window.innerHeight - 0.5) * 0.5;
+});
+
+let scrollY = 0;
+window.addEventListener('scroll', () => { scrollY = window.scrollY; });
+
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  particles.rotation.y = t * 0.015 + mouseX * 0.3;
+  particles.rotation.x = mouseY * 0.2 + scrollY * 0.0001;
+  sphere.rotation.y = t * 0.3;
+  sphere.rotation.x = t * 0.2;
+  sphere2.rotation.y = -t * 0.25;
+  sphere2.rotation.z = t * 0.15;
+  gridHelper.position.x = mouseX * -0.5;
+  camera.position.x += (mouseX * 0.3 - camera.position.x) * 0.05;
+  camera.position.y += (-mouseY * 0.3 - camera.position.y) * 0.05;
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ─── CUSTOM CURSOR ─────────────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let cx = 0, cy = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { cx = e.clientX; cy = e.clientY; });
+function updateCursor() {
+  cursor.style.left = cx + 'px'; cursor.style.top = cy + 'px';
+  rx += (cx - rx) * 0.12; ry += (cy - ry) * 0.12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(updateCursor);
+}
+updateCursor();
+document.querySelectorAll('a, button, .project-card, .exp-item').forEach(el => {
+  el.addEventListener('mouseenter', () => { ring.style.width='60px'; ring.style.height='60px'; ring.style.opacity='0.6'; });
+  el.addEventListener('mouseleave', () => { ring.style.width='36px'; ring.style.height='36px'; ring.style.opacity='1'; });
+});
+
+// ─── NAV SCROLL ─────────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// ─── REVEAL ON SCROLL ───────────────────────────────────────────────
+const observer = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), 80);
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ─── EXPERIENCE TABS ────────────────────────────────────────────────
+function switchExp(idx, el) {
+  document.querySelectorAll('.exp-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('exp-0').style.display = idx === 0 ? 'block' : 'none';
+  document.getElementById('exp-1').style.display = idx === 1 ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
